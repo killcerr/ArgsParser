@@ -1,6 +1,7 @@
 # ArgsParser
-c++20 no heap allocation progream arguments parser
+c++20 header-only no heap allocation progream arguments parser
 # Usage
+ArgsParser.cpp
 ```cpp
 #include "ArgsParser.hpp"
 #include <iostream>
@@ -39,5 +40,17 @@ int main(int argc, char **argv) {
                          {no_keys, static_cast<std::size_t>(count)});
   for (int i = 0; i < count; i++)
     std::cout << no_keys[i]->val << " ";
+  for (int i = 0; i < count; i++)
+    delete no_keys[i];
+  delete[] no_keys;
 }
+```
+Command:
+```
+.\ArgsParser.exe --flag1 --simple1=55556 --complex1 --flag1 --complex1 --flag1 --simple1=0 --simple1=11 1 2 3 4 5 6 7 8 9 10 abcd
+```
+Output
+```
+1 55556 1 11 1 0
+11 1 2 3 4 5 6 7 8 9 10 abcd
 ```
