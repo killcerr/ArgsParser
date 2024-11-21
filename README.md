@@ -49,7 +49,7 @@ Command:
 ```
 .\ArgsParser.exe --flag1 --simple1=55556 --complex1 --flag1 --complex1 --flag1 --simple1=0 --simple1=11 1 2 3 4 5 6 7 8 9 10 abcd
 ```
-Output
+Output:
 ```
 1 55556 1 11 1 0
 11 1 2 3 4 5 6 7 8 9 10 abcd
