@@ -17,6 +17,7 @@ inline void check_keys(std::span<std::string_view> keys) {
 
 struct OptionRange {
   int begin = -1, end = -1;
+  operator bool() const { return begin < end; }
 };
 
 struct FlagOption {
@@ -155,8 +156,10 @@ struct ComplexOption {
 };
 struct NoKeyOption {
   std::string_view val;
+  OptionRange range;
   int parse(int argc, char **argv, int index) {
     val = argv[index];
+    range = {index, index + 1};
     return index + 1;
   }
   bool is(int argc, char **argv, int index) const { return true; }
