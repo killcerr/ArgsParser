@@ -1,6 +1,5 @@
 #pragma once
 #include <cassert>
-#include <mdspan>
 #include <span>
 #include <stdexcept>
 #include <string_view>
