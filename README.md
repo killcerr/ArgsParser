@@ -7,24 +7,27 @@ ArgsParser.cpp
 #include <iostream>
 int main(int argc, char **argv) {
   using namespace ArgsParser;
-  FlagOption flag{"--flag1"};
-  SimpleOption simple{"--simple1"};
+  std::string_view flag_key[]{"--flag1", "--flag2"};
+  FlagOption flag{flag_key};
+  std::string_view simple_key[]{"--simple1", "--simple2"};
+  SimpleOption simple{simple_key};
   FlagOption *flags[]{&flag};
   SimpleOption *simples[]{&simple};
 
-  FlagOption cflag{"--flag1"};
-  SimpleOption csimple{"--simple1"};
+  FlagOption cflag{flag_key};
+  SimpleOption csimple{simple_key};
   FlagOption *cflags[]{&cflag};
   SimpleOption *csimples[]{&csimple};
 
-  FlagOption ccflag{"--flag1"};
-  SimpleOption ccsimple{"--simple1"};
+  FlagOption ccflag{flag_key};
+  SimpleOption ccsimple{simple_key};
   FlagOption *ccflags[]{&ccflag};
   SimpleOption *ccsimples[]{&ccsimple};
-  ComplexOption ccomplex{"--complex1", ccflags, ccsimples};
+  std::string_view complex_key[]{"--complex1", "--complex2"};
+  ComplexOption ccomplex{complex_key, ccflags, ccsimples};
   ComplexOption *ccomplexs[]{&ccomplex};
 
-  ComplexOption complex{"--complex1", cflags, csimples, ccomplexs};
+  ComplexOption complex{complex_key, cflags, csimples, ccomplexs};
   ComplexOption *complexs[]{&complex};
 
   Parser parser{flags, simples, complexs};
@@ -48,6 +51,15 @@ int main(int argc, char **argv) {
 Command:
 ```
 .\ArgsParser.exe --flag1 --simple1=55556 --complex1 --flag1 --complex1 --flag1 --simple1=0 --simple1=11 1 2 3 4 5 6 7 8 9 10 abcd
+```
+Output:
+```
+1 55556 1 11 1 0
+11 1 2 3 4 5 6 7 8 9 10 abcd
+```
+Command:
+```
+.\ArgParser.exe --flag2 --simple2=55556 --complex1 --flag1 --complex2 --flag1 --simple1=0 --simple1=11 1 2 3 4 5 6 7 8 9 10 abcd
 ```
 Output:
 ```
