@@ -36,6 +36,7 @@ int main(int argc, char **argv) {
             << csimple.val << " " << ccflag.val << " " << ccsimple.val << "\n";
   auto count = parser.no_key_option_count;
   std::cout << count << " ";
+  // the count of NoKeyOption is cannot be decide compile time so that need to use new.
   auto no_keys = new NoKeyOption *[count];
   for (int i = 0; i < count; i++)
     no_keys[i] = new NoKeyOption;
