@@ -1,5 +1,5 @@
 # ArgsParser
-c++20 header-only no heap allocation progream arguments parser
+c++23 header-only no heap allocation progream arguments parser
 # Usage
 ArgsParser.cpp
 ```cpp
