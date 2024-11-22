@@ -1,14 +1,17 @@
 #pragma once
 #include <cassert>
+#include <mdspan>
 #include <span>
 #include <stdexcept>
 #include <string_view>
 #include <utility>
+
 namespace ArgsParser {
 
 namespace details {
-inline void check_key(std::string_view key) {
-  assert(key.starts_with('-') && "key is not starts with '-'.");
+inline void check_keys(std::span<std::string_view> keys) {
+  for (auto key : keys)
+    assert(key.starts_with('-') && "key is not starts with '-'.");
 }
 } // namespace details
 
@@ -17,64 +20,77 @@ struct OptionRange {
 };
 
 struct FlagOption {
-  std::string_view key;
+  std::span<std::string_view> keys;
   bool val;
   OptionRange range;
   int parse(int argc, char **argv, int index) {
-    assert(argv[index] == key && "key mismatch.");
     val = true;
     range = {index, index + 1};
     return index + 1;
   }
-  bool is(int argc, char **argv, int index) const { return argv[index] == key; }
-  FlagOption(std::string_view key, bool def = false) : key(key), val(def) {
-    details::check_key(key);
+  bool is(int argc, char **argv, int index) const {
+    for (auto key : keys)
+      if (argv[index] == key)
+        return true;
+    return false;
+  }
+  FlagOption(std::span<std::string_view> keys, bool def = false)
+      : keys(keys), val(def) {
+    details::check_keys(keys);
   }
 };
 
 struct SimpleOption {
-  std::string_view key;
+  std::span<std::string_view> keys;
   std::string_view val;
   OptionRange range;
   int parse(int argc, char **argv, int index) {
-    assert(std::string_view{argv[index]}.starts_with(key) && "key mismatch.");
-    if (argv[index] == key) {
-      if (index + 1 < argc)
-        val = argv[index + 1];
-      else
-        throw std::length_error("value is not set.");
-      range = {index, index + 2};
-      return index + 2;
-    } else {
-      val = argv[index];
-      if (auto pos = val.find('='); pos + 1 < val.size()) {
-        val = val.substr(pos + 1);
-        range = {index, index + 1};
-        return index + 1;
-      } else {
-        throw std::length_error("value is not set.");
+    for (auto key : keys) {
+      if (argv[index] == key) {
+        if (index + 1 < argc)
+          val = argv[index + 1];
+        else
+          throw std::length_error("value is not set.");
+        range = {index, index + 2};
+        return index + 2;
+      } else if (strlen(argv[index]) > key.size() &&
+                 std::string_view{argv[index], key.size()} == key &&
+                 argv[index][key.size()] == '=') {
+        val = argv[index];
+        if (auto pos = val.find('='); pos + 1 < val.size()) {
+          val = val.substr(pos + 1);
+          range = {index, index + 1};
+          return index + 1;
+        } else {
+          throw std::length_error("value is not set.");
+        }
       }
     }
+    assert(false && "key is not found.");
+    std::unreachable();
   }
   bool is(int argc, char **argv, int index) const {
-    return argv[index] == key ||
-           strlen(argv[index]) >= key.size() &&
-               std::string_view{argv[index], key.size()} == key &&
-               argv[index][key.size()] == '=';
+    for (auto key : keys)
+      if (argv[index] == key ||
+          strlen(argv[index]) >= key.size() &&
+              std::string_view{argv[index], key.size()} == key &&
+              argv[index][key.size()] == '=') {
+        return true;
+      }
+    return false;
   }
-  SimpleOption(std::string_view key, std::string_view def = "")
-      : key(key), val(def) {
-    details::check_key(key);
+  SimpleOption(std::span<std::string_view> keys, std::string_view def = "")
+      : keys(keys), val(def) {
+    details::check_keys(keys);
   }
 };
 struct ComplexOption {
-  std::string_view key;
+  std::span<std::string_view> keys;
   std::span<FlagOption *> flags;
   std::span<SimpleOption *> simples;
   std::span<ComplexOption *> complexs;
   OptionRange range;
   int parse(int argc, char **argv, int index) {
-    assert(std::string_view{argv[index]}.starts_with(key) && "key mismatch.");
     range.begin = index;
     index++;
     int current_flag_index = 0;
@@ -123,12 +139,18 @@ struct ComplexOption {
     range.end = index;
     return index;
   }
-  bool is(int argc, char **argv, int index) const { return argv[index] == key; }
-  ComplexOption(std::string_view key, std::span<FlagOption *> flags = {},
+  bool is(int argc, char **argv, int index) const {
+    for (auto key : keys)
+      if (argv[index] == key)
+        return true;
+    return false;
+  }
+  ComplexOption(std::span<std::string_view> keys,
+                std::span<FlagOption *> flags = {},
                 std::span<SimpleOption *> simples = {},
                 std::span<ComplexOption *> complexs = {})
-      : key(key), flags(flags), simples(simples), complexs(complexs) {
-    details::check_key(key);
+      : keys(keys), flags(flags), simples(simples), complexs(complexs) {
+    details::check_keys(keys);
   }
 };
 struct NoKeyOption {
