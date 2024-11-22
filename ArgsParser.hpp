@@ -1,5 +1,6 @@
 #pragma once
 #include <cassert>
+#include <cstring>
 #include <span>
 #include <stdexcept>
 #include <string_view>
@@ -170,7 +171,7 @@ struct Parser {
     int current_flag_index = 0;
     int current_simple_index = 0;
     int current_complex_index = 0;
-    int no_key_option_count = 0;
+    int no_key_option_count = 1;
     while (index < argc) {
       bool continue_flag = false;
       for (auto i = current_complex_index; i < complexs.size(); i++) {
@@ -248,7 +249,7 @@ struct Parser {
       throw std::runtime_error("please call parse first.");
     if (no_keys.size() < no_key_option_count)
       throw std::length_error("no_keys's length is too short.");
-    int index = 1;
+    int index = 0;
     int no_key_index = 0;
     NoKeyContext context;
     while (index < argc) {
