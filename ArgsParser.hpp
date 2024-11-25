@@ -262,5 +262,26 @@ struct Parser {
         index++;
     }
   }
+  void enum_no_keys(int argc, char **argv, auto callable) {
+    NoKeyContext context;
+    int index = 0;
+    while (index < argc) {
+      if (is_no_key(argc, argv, index, context)) {
+        if constexpr (requires(decltype(callable) c, NoKeyOption *o) {
+                        bool{c(o)};
+                      }) {
+          NoKeyOption o;
+          o.parse(argc, argv, index);
+          if (!callable(&o))
+            break;
+        } else {
+          NoKeyOption o;
+          o.parse(argc, argv, index);
+          callable(&o);
+        }
+      }
+      index++;
+    }
+  }
 };
 } // namespace ArgsParser
