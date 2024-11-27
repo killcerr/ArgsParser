@@ -15,7 +15,7 @@ inline void check_keys(std::span<std::string_view> keys) {
 }
 inline void check_arg(std::span<std::string_view> keys, const char *arg) {
   for (auto key : keys)
-    if (key == arg)
+    if (strlen(arg) >= key.size() && key == std::string_view{arg, key.size()})
       return;
   assert(false && "arg mismatch.");
 }
