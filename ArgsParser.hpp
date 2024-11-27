@@ -225,8 +225,8 @@ struct Parser {
       unmatched_option_count++;
       index++;
     }
-    this->unmatched_option_count = unmatch_option_count;
-    return unmatch_option_count;
+    this->unmatched_option_count = unmatched_option_count;
+    return unmatched_option_count;
   }
   struct NoKeyContext {
     int current_flag_index = 0;
