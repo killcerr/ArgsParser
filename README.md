@@ -34,19 +34,22 @@ int main(int argc, char **argv) {
   parser.parse(argc, argv);
   std::cout << flag.val << " " << simple.val << " " << cflag.val << " "
             << csimple.val << " " << ccflag.val << " " << ccsimple.val << "\n";
-  auto count = parser.no_key_option_count;
+  auto count = parser.unmatched_option_count;
   std::cout << count << " ";
-  // the count of NoKeyOption is cannot be decide compile time so that we need to use new.
-  auto no_keys = new NoKeyOption *[count];
+  // the count of UnmatchedOption is cannot be decide compile time so that we
+  // need to use new.
+  auto unmatched = new UnmatchedOption *[count];
   for (int i = 0; i < count; i++)
-    no_keys[i] = new NoKeyOption;
-  parser.get_all_no_keys(argc, argv,
-                         {no_keys, static_cast<std::size_t>(count)});
+    unmatched[i] = new UnmatchedOption;
+  parser.get_all_unmatched(argc, argv,
+                           {unmatched, static_cast<std::size_t>(count)});
   for (int i = 0; i < count; i++)
-    std::cout << no_keys[i]->val << " ";
+    std::cout << unmatched[i]->val << " ";
   for (int i = 0; i < count; i++)
-    delete no_keys[i];
-  delete[] no_keys;
+    delete unmatched[i];
+  delete[] unmatched;
+  puts("");
+  parser.enum_unmatched(argc, argv, [](auto o) { std::cout << o->val << " "; });
 }
 ```
 Command:

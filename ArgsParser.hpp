@@ -13,6 +13,12 @@ inline void check_keys(std::span<std::string_view> keys) {
   for (auto key : keys)
     assert(key.starts_with('-') && "key is not starts with '-'.");
 }
+inline void check_arg(std::span<std::string_view> keys, const char *arg) {
+  for (auto key : keys)
+    if (key == arg)
+      return;
+  assert(false && "arg mismatch.");
+}
 } // namespace details
 
 struct OptionRange {
@@ -25,6 +31,7 @@ struct FlagOption {
   bool val;
   OptionRange range;
   int parse(int argc, char **argv, int index) {
+    details::check_arg(keys, argv[index]);
     val = true;
     range = {index, index + 1};
     return index + 1;
@@ -46,6 +53,7 @@ struct SimpleOption {
   std::string_view val;
   OptionRange range;
   int parse(int argc, char **argv, int index) {
+    details::check_arg(keys, argv[index]);
     for (auto key : keys) {
       if (argv[index] == key) {
         if (index + 1 < argc)
@@ -92,6 +100,7 @@ struct ComplexOption {
   std::span<ComplexOption *> complexs;
   OptionRange range;
   int parse(int argc, char **argv, int index) {
+    details::check_arg(keys, argv[index]);
     range.begin = index;
     index++;
     int current_flag_index = 0;
@@ -154,7 +163,7 @@ struct ComplexOption {
     details::check_keys(keys);
   }
 };
-struct NoKeyOption {
+struct UnmatchedOption {
   std::string_view val;
   OptionRange range;
   int parse(int argc, char **argv, int index) {
@@ -168,13 +177,13 @@ struct Parser {
   std::span<FlagOption *> flags;
   std::span<SimpleOption *> simples;
   std::span<ComplexOption *> complexs;
-  int no_key_option_count = -1;
+  int unmatched_option_count = -1;
   int parse(int argc, char **argv) {
     int index = 1;
     int current_flag_index = 0;
     int current_simple_index = 0;
     int current_complex_index = 0;
-    int no_key_option_count = 1;
+    int unmatch_option_count = 1;
     while (index < argc) {
       bool continue_flag = false;
       for (auto i = current_complex_index; i < complexs.size(); i++) {
@@ -213,11 +222,11 @@ struct Parser {
       }
       if (continue_flag)
         continue;
-      no_key_option_count++;
+      unmatch_option_count++;
       index++;
     }
-    this->no_key_option_count = no_key_option_count;
-    return no_key_option_count;
+    this->unmatched_option_count = unmatch_option_count;
+    return unmatch_option_count;
   }
   struct NoKeyContext {
     int current_flag_index = 0;
@@ -246,36 +255,36 @@ struct Parser {
       return false;
     return true;
   }
-  void get_all_no_keys(int argc, char **argv,
-                       std::span<NoKeyOption *> no_keys) {
-    if (no_key_option_count == -1)
+  void get_all_unmatched(int argc, char **argv,
+                         std::span<UnmatchedOption *> unmatched_options) {
+    if (unmatched_option_count == -1)
       throw std::runtime_error("please call parse first.");
-    if (no_keys.size() < no_key_option_count)
-      throw std::length_error("no_keys's length is too short.");
+    if (unmatched_options.size() < unmatched_option_count)
+      throw std::length_error("unmatched_options's length is too short.");
     int index = 0;
     int no_key_index = 0;
     NoKeyContext context;
     while (index < argc) {
       if (is_no_key(argc, argv, index, context)) {
-        index = no_keys[no_key_index++]->parse(argc, argv, index);
+        index = unmatched_options[no_key_index++]->parse(argc, argv, index);
       } else
         index++;
     }
   }
-  void enum_no_keys(int argc, char **argv, auto callable) {
+  void enum_unmatched(int argc, char **argv, auto callable) {
     NoKeyContext context;
     int index = 0;
     while (index < argc) {
       if (is_no_key(argc, argv, index, context)) {
-        if constexpr (requires(decltype(callable) c, NoKeyOption *o) {
+        if constexpr (requires(decltype(callable) c, UnmatchedOption *o) {
                         bool{c(o)};
                       }) {
-          NoKeyOption o;
+          UnmatchedOption o;
           o.parse(argc, argv, index);
           if (!callable(&o))
             break;
         } else {
-          NoKeyOption o;
+          UnmatchedOption o;
           o.parse(argc, argv, index);
           callable(&o);
         }
