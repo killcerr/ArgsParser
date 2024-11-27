@@ -183,7 +183,7 @@ struct Parser {
     int current_flag_index = 0;
     int current_simple_index = 0;
     int current_complex_index = 0;
-    int unmatch_option_count = 1;
+    int unmatched_option_count = 1;
     while (index < argc) {
       bool continue_flag = false;
       for (auto i = current_complex_index; i < complexs.size(); i++) {
@@ -222,7 +222,7 @@ struct Parser {
       }
       if (continue_flag)
         continue;
-      unmatch_option_count++;
+      unmatched_option_count++;
       index++;
     }
     this->unmatched_option_count = unmatch_option_count;
