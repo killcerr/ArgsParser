@@ -2,9 +2,19 @@
 #include <cassert>
 #include <cstring>
 #include <span>
-#include <stdexcept>
 #include <string_view>
 #include <utility>
+
+#define ARGS_PARSER_NO_EXCEPTIONS
+
+#if defined(__EXCEPTIONS) ||                                                   \
+    defined(_MSC_VER) && !defined(ARGS_PARSER_NO_EXCEPTIONS)
+#include <stdexcept>
+#define ARGS_PARSER_THROW(...) throw __VA_ARGS__;
+#else
+#include <cstdlib>
+#define ARGS_PARSER_THROW(...) std::abort();
+#endif
 
 namespace ArgsParser {
 
@@ -59,7 +69,7 @@ struct SimpleOption {
         if (index + 1 < argc)
           val = argv[index + 1];
         else
-          throw std::length_error("value is not set.");
+          ARGS_PARSER_THROW(std::length_error("value is not set."))
         range = {index, index + 2};
         return index + 2;
       } else if (strlen(argv[index]) > key.size() &&
@@ -71,7 +81,7 @@ struct SimpleOption {
           range = {index, index + 1};
           return index + 1;
         } else {
-          throw std::length_error("value is not set.");
+          ARGS_PARSER_THROW(std::length_error("value is not set."))
         }
       }
     }
@@ -228,12 +238,13 @@ struct Parser {
     this->unmatched_option_count = unmatched_option_count;
     return unmatched_option_count;
   }
-  struct NoKeyContext {
+  struct UnmatchedContext {
     int current_flag_index = 0;
     int current_simple_index = 0;
     int current_complex_index = 0;
   };
-  bool is_no_key(int argc, char **argv, int index, NoKeyContext &context) {
+  bool is_unmatched(int argc, char **argv, int index,
+                    UnmatchedContext &context) {
     auto &[flag, simple, complex] = context;
     while (flag < flags.size() && flags[flag]->range.end <= index) {
       flag++;
@@ -258,35 +269,34 @@ struct Parser {
   void get_all_unmatched(int argc, char **argv,
                          std::span<UnmatchedOption *> unmatched_options) {
     if (unmatched_option_count == -1)
-      throw std::runtime_error("please call parse first.");
+      parse(argc, argv);
     if (unmatched_options.size() < unmatched_option_count)
-      throw std::length_error("unmatched_options's length is too short.");
+      ARGS_PARSER_THROW(
+          std::length_error("unmatched_options's length is too short."));
     int index = 0;
     int no_key_index = 0;
-    NoKeyContext context;
+    UnmatchedContext context;
     while (index < argc) {
-      if (is_no_key(argc, argv, index, context)) {
+      if (is_unmatched(argc, argv, index, context)) {
         index = unmatched_options[no_key_index++]->parse(argc, argv, index);
       } else
         index++;
     }
   }
   void enum_unmatched(int argc, char **argv, auto callable) {
-    NoKeyContext context;
+    UnmatchedContext context;
     int index = 0;
     while (index < argc) {
-      if (is_no_key(argc, argv, index, context)) {
+      if (is_unmatched(argc, argv, index, context)) {
+        UnmatchedOption o;
+        o.parse(argc, argv, index);
         if constexpr (requires(decltype(callable) c, UnmatchedOption *o) {
                         bool{c(o)};
                       }) {
-          UnmatchedOption o;
-          o.parse(argc, argv, index);
-          if (!callable(&o))
+          if (!callable(static_cast<const UnmatchedOption *>(&o)))
             break;
         } else {
-          UnmatchedOption o;
-          o.parse(argc, argv, index);
-          callable(&o);
+          callable(static_cast<const UnmatchedOption *>(&o));
         }
       }
       index++;

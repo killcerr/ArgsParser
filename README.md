@@ -1,8 +1,14 @@
 # ArgsParser
-c++23 header-only no heap allocation progream arguments parser
+
+c++23 header-only no heap allocation program arguments parser
+
 # Usage
+
 ArgsParser.cpp
+
 ```cpp
+#include "ArgsParser.hpp"
+#include <iostream>
 #include "ArgsParser.hpp"
 #include <iostream>
 int main(int argc, char **argv) {
@@ -36,6 +42,8 @@ int main(int argc, char **argv) {
             << csimple.val << " " << ccflag.val << " " << ccsimple.val << "\n";
   auto count = parser.unmatched_option_count;
   std::cout << count << " ";
+  parser.enum_unmatched(argc, argv, [](auto o) { std::cout << o->val << " "; });
+  std::cout << "\n";
   // the count of UnmatchedOption is cannot be decide compile time so that we
   // need to use new.
   auto unmatched = new UnmatchedOption *[count];
@@ -48,24 +56,30 @@ int main(int argc, char **argv) {
   for (int i = 0; i < count; i++)
     delete unmatched[i];
   delete[] unmatched;
-  puts("");
-  parser.enum_unmatched(argc, argv, [](auto o) { std::cout << o->val << " "; });
 }
 ```
+
 Command:
+
 ```
 .\ArgsParser.exe --flag1 --simple1=55556 --complex1 --flag1 --complex1 --flag1 --simple1=0 --simple1=11 1 2 3 4 5 6 7 8 9 10 abcd
 ```
+
 Output:
+
 ```
 1 55556 1 11 1 0
 11 1 2 3 4 5 6 7 8 9 10 abcd
 ```
+
 Command:
+
 ```
 .\ArgParser.exe --flag2 --simple2=55556 --complex1 --flag1 --complex2 --flag1 --simple1=0 --simple1=11 1 2 3 4 5 6 7 8 9 10 abcd
 ```
+
 Output:
+
 ```
 1 55556 1 11 1 0
 11 1 2 3 4 5 6 7 8 9 10 abcd
