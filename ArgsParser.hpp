@@ -5,8 +5,6 @@
 #include <string_view>
 #include <utility>
 
-#define ARGS_PARSER_NO_EXCEPTIONS
-
 #if defined(__EXCEPTIONS) ||                                                   \
     defined(_MSC_VER) && !defined(ARGS_PARSER_NO_EXCEPTIONS)
 #include <stdexcept>
